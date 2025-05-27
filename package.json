@@ -1,7 +1,7 @@
 {
-  "name": "nodejs",
+  "name": "webhook-checker",
   "version": "1.0.0",
-  "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,6 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.13.11"
+    "@types/node": "^22.13.11",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.5.0",
+    "node-fetch": "^3.3.2"
   }
 }
