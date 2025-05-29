@@ -1,6 +1,11 @@
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+import express = require('express');
+import fetch = require('node-fetch'); 
+import dotenv = require('dotenv');
+
 dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 3000;
 
 const url = "https://growagardenvalues.com/stock/get_stock_data.php";
 const webhookUrl = process.env.WEBHOOK_URL;
@@ -32,34 +37,44 @@ const seedInfo = {
 };
 
 const emojiMap = {
-    "Carrot": ":carrot:",
-    "Strawberry": "🍓",
-    "Apple": "🍎",
-    "Tomato": "🍅",
-    "Orange Tulip": "🌷",
-    "Blueberry": "🫐",
-    "Watering Can": "🪣",
-    "Favorite Tool": "🛡️",
-    "Recall Wrench": "🛠️",
-    "Trowel": "🪛"
+    "Carrot": "<:Carrot:1376892104600457298>",
+    "Strawberry": "<:Strawberry:1376892102327402517>",
+    "Apple": "<:Apple:1376892083218026548>",
+    "Tomato": "<:Tomato:1376892093510713394>",
+    "Orange Tulip": "<:OrangeTulip:1376892098112000221>",
+    "Blueberry": "<:Blueberry:1376892100225798185>",
+    "Daffodil": "<:Daffodil:1376892095825973288>",
+    "Corn": "<:Corn:1376892078554087484>",
+    "Bamboo": "<:Bamboo:1376892087374581910>",
+    "Watermelon": "<:Watermelon:1376892080885858477>",
+    "Pumpkin": "<:Pumkin:1376892078554087484>",
+    "Dragon Fruit": "<:DragonFruit:1376892076121133157>",
+    "Mango": "<:Mango:1376892073487237120>",
+    "Coconut": "<:Coconut:1376892071176048750>",
+    "Cactus": "<:Cactus:1376892068751741009>",
+    "Pepper": "<:Pepper:1376892066092679168>",
+    "Mushroom": "<:Mushroom:1376892063974690816>",
+    "Grape": "<:Grape:1376892061495726192>",
+    "Cacao": "<:Cacao:1376889865928704141>",
+    "Beanstalk": "<:Beanstalk:1376889862611009578>"
 };
 
 function buildEmbed(data) {
     const seeds = data.seeds.map(item => {
         const info = seedInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiMap[item.name] || "🌱";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: ${item.quantity}\nPrice Each: $${info.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice Each: $${info.price}`;
     }).join("\n\n");
 
     const now = Math.floor(Date.now() / 1000);
     const fiveMinLater = now + 4 * 60;
 
-    const embed = {
+    return {
         title: "🌿 ThunderZ • Grow a Garden Stocks",
         color: 0xffff00,
         fields: [
             {
-                name: "**🌱 SEEDS STOCK**",
+                name: "",
                 value: seeds || "_No seeds available_",
                 inline: true
             },
@@ -71,26 +86,22 @@ function buildEmbed(data) {
         ],
         timestamp: new Date().toISOString()
     };
-
-    return embed;
-}
-
-function buildMessage(data) {
-    const seedsText = data.seeds.map(item => {
-        const info = seedInfo[item.name] || { rarity: "Unknown", price: 0 };
-        return `° ${item.name} (${info.rarity})\nQuantity: ${item.quantity}\nPrice Each: $${info.price}`;
-    }).join("\n\n");
-
-    return seedsText;
 }
 
 async function sendWebhook(data) {
     const embed = buildEmbed(data);
-    await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ embeds: [embed] })
-    });
+    try {
+        const res = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ embeds: [embed] })
+        });
+        if (!res.ok) {
+            console.error(`Failed to send webhook: ${res.status} ${res.statusText}`);
+        }
+    } catch (err) {
+        console.error("Error sending webhook:", err.message);
+    }
 }
 
 async function checkStock() {
@@ -103,7 +114,8 @@ async function checkStock() {
             return;
         }
 
-        const message = buildMessage(data);
+        // stringify untuk deteksi perubahan
+        const message = JSON.stringify(data.seeds);
 
         if (message !== prevState) {
             prevState = message;
@@ -118,5 +130,16 @@ async function checkStock() {
     }
 }
 
-setInterval(checkStock, 1000);
+// route sederhana supaya bisa cek bot jalan
+app.get('/', (req, res) => {
+    res.send('Bot is running!');
+});
+
+// mulai express server
+app.listen(port, () => {
+    console.log(`Express server listening on port ${port}`);
+});
+
+// cek stock setiap 1 menit (1000ms terlalu sering)
+setInterval(checkStock, 1 * 1000);
 checkStock();
