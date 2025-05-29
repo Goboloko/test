@@ -6,6 +6,9 @@ const url = "https://growagardenvalues.com/stock/get_stock_data.php";
 const webhookUrl = process.env.WEBHOOK_URL;
 
 let prevState = "";
+const eggGearWebhookUrl = process.env.EGG_GEAR_WEBHOOK_URL;
+
+let prevEggGearState = "";
 
 // Manual seed data
 const seedInfo = {
@@ -92,6 +95,51 @@ function buildMessage(data) {
     return seedsText;
 }
 
+function buildEggGearEmbed(data) {
+    const items = [...data.eggs, ...data.gear];
+
+    if (items.length === 0) {
+        return {
+            title: "🥚⚙️ ThunderZ • Grow a Garden Egg & Gear Stocks",
+            color: 0x00ffcc,
+            fields: [
+                {
+                    name: "",
+                    value: "_No Eggs or Gear available_",
+                    inline: true
+                }
+            ],
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    const itemText = items.map(item => {
+        return `• ${item.name}\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
+    }).join("\n\n");
+
+    return {
+        title: "🥚⚙️ ThunderZ • Grow a Garden Egg & Gear Stocks",
+        color: 0x00ffcc,
+        fields: [
+            {
+                name: "",
+                value: itemText,
+                inline: false
+            }
+        ],
+        timestamp: new Date().toISOString()
+    };
+}
+
+async function sendEggGearWebhook(data) {
+    const embed = buildEggGearEmbed(data);
+    await fetch(eggGearWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] })
+    });
+}
+
 async function sendWebhook(data) {
     const embed = buildEmbed(data);
     await fetch(webhookUrl, {
@@ -111,20 +159,33 @@ async function checkStock() {
             return;
         }
 
-        const message = buildMessage(data);
-
-        if (message !== prevState) {
-            prevState = message;
+        // Seed stock check
+        const seedMessage = buildMessage(data);
+        if (seedMessage !== prevState) {
+            prevState = seedMessage;
             await sendWebhook(data);
-            console.log(`[${new Date().toLocaleTimeString()}] Webhook sent.`);
+            console.log(`[${new Date().toLocaleTimeString()}] Seed webhook sent.`);
         } else {
-            console.log(`[${new Date().toLocaleTimeString()}] No change.`);
+            console.log(`[${new Date().toLocaleTimeString()}] Seed: No change.`);
+        }
+
+        // Egg & Gear stock check
+        const eggGearMessage = [...data.eggs, ...data.gear]
+            .map(item => `${item.name}|${item.quantity}|${item.price}`).join(";");
+
+        if (eggGearMessage !== prevEggGearState) {
+            prevEggGearState = eggGearMessage;
+            await sendEggGearWebhook(data);
+            console.log(`[${new Date().toLocaleTimeString()}] Egg/Gear webhook sent.`);
+        } else {
+            console.log(`[${new Date().toLocaleTimeString()}] Egg/Gear: No change.`);
         }
 
     } catch (err) {
         console.error("Error checking stock:", err.message);
     }
 }
+
 
 setInterval(checkStock, 1000);
 checkStock();
