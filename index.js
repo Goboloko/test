@@ -1,11 +1,6 @@
-import express = require('express');
-import fetch = require('node-fetch'); 
-import dotenv = require('dotenv');
-
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 dotenv.config();
-
-const app = express();
-const port = process.env.PORT || 3000;
 
 const url = "https://growagardenvalues.com/stock/get_stock_data.php";
 const webhookUrl = process.env.WEBHOOK_URL;
@@ -88,20 +83,22 @@ function buildEmbed(data) {
     };
 }
 
+function buildMessage(data) {
+    const seedsText = data.seeds.map(item => {
+        const info = seedInfo[item.name] || { rarity: "Unknown", price: 0 };
+        return `° ${item.name} (${info.rarity})\nQuantity: ${item.quantity}\nPrice Each: $${info.price}`;
+    }).join("\n\n");
+
+    return seedsText;
+}
+
 async function sendWebhook(data) {
     const embed = buildEmbed(data);
-    try {
-        const res = await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ embeds: [embed] })
-        });
-        if (!res.ok) {
-            console.error(`Failed to send webhook: ${res.status} ${res.statusText}`);
-        }
-    } catch (err) {
-        console.error("Error sending webhook:", err.message);
-    }
+    await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] })
+    });
 }
 
 async function checkStock() {
@@ -114,8 +111,7 @@ async function checkStock() {
             return;
         }
 
-        // stringify untuk deteksi perubahan
-        const message = JSON.stringify(data.seeds);
+        const message = buildMessage(data);
 
         if (message !== prevState) {
             prevState = message;
@@ -130,16 +126,5 @@ async function checkStock() {
     }
 }
 
-// route sederhana supaya bisa cek bot jalan
-app.get('/', (req, res) => {
-    res.send('Bot is running!');
-});
-
-// mulai express server
-app.listen(port, () => {
-    console.log(`Express server listening on port ${port}`);
-});
-
-// cek stock setiap 1 menit (1000ms terlalu sering)
-setInterval(checkStock, 1 * 1000);
+setInterval(checkStock, 1000);
 checkStock();
