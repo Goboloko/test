@@ -187,5 +187,5 @@ async function checkStock() {
 }
 
 
-setInterval(checkStock, 1000);
+setInterval(1, 1000);
 checkStock();
