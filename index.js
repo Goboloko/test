@@ -4,11 +4,13 @@ dotenv.config();
 
 const url = "https://growagardenvalues.com/stock/get_stock_data.php";
 const webhookUrl = process.env.WEBHOOK_URL;
+const eggWebhookUrl = process.env.EGG_WEBHOOK_URL;
+const gearWebhookUrl = process.env.GEAR_WEBHOOK_URL;
 
 let prevState = "";
-const eggGearWebhookUrl = process.env.EGG_GEAR_WEBHOOK_URL;
+let prevGearState = "";
+let prevEggState = "";
 
-let prevEggGearState = "";
 
 // Manual seed data
 const seedInfo = {
@@ -136,43 +138,72 @@ function buildMessage(data) {
     return seedsText;
 }
 
-function buildEggGearEmbed(data) {
-    const items = [...data.eggs, ...data.gear];
-
-    if (items.length === 0) {
+function buildEggEmbed(data) {
+    if (data.eggs.length === 0) {
         return {
-            title: "🥚⚙️ ThunderZ • Grow a Garden Egg & Gear Stocks",
-            color: 0x00ffcc,
-            fields: [
-                {
-                    name: "",
-                    value: "_No Eggs or Gear available_",
-                    inline: true
-                }
-            ],
+            title: "🥚 ThunderZ • Grow a Garden Egg Stocks",
+            color: 0xff66cc,
+            fields: [{ name: "", value: "_No Eggs available_", inline: true }],
             timestamp: new Date().toISOString()
         };
     }
 
-    const itemText = items.map(item => {
+    const itemText = data.eggs.map(item => {
         const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiGear[item.name] || "❔";
-        return `${emoji} ${item.name} (${info.rarity})\n\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
     }).join("\n\n");
 
     return {
-        title: "🥚⚙️ ThunderZ • Grow a Garden Egg & Gear Stocks",
-        color: 0x00ffcc,
-        fields: [
-            {
-                name: "",
-                value: itemText,
-                inline: false
-            }
-        ],
+        title: "🥚 ThunderZ • Grow a Garden Egg Stocks",
+        color: 0xff66cc,
+        fields: [{ name: "", value: itemText, inline: false }],
         timestamp: new Date().toISOString()
     };
 }
+
+function buildGearEmbed(data) {
+    if (data.gear.length === 0) {
+        return {
+            title: "⚙️ ThunderZ • Grow a Garden Gear Stocks",
+            color: 0x00ccff,
+            fields: [{ name: "", value: "_No Gear available_", inline: true }],
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    const itemText = data.gear.map(item => {
+        const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
+        const emoji = emojiGear[item.name] || "❔";
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
+    }).join("\n\n");
+
+    return {
+        title: "⚙️ ThunderZ • Grow a Garden Gear Stocks",
+        color: 0x00ccff,
+        fields: [{ name: "", value: itemText, inline: false }],
+        timestamp: new Date().toISOString()
+    };
+}
+
+async function sendEggWebhook(data) {
+    const embed = buildEggEmbed(data);
+    await fetch(eggWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] })
+    });
+}
+
+async function sendGearWebhook(data) {
+    const embed = buildGearEmbed(data);
+    await fetch(gearWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ embeds: [embed] })
+    });
+}
+
 
 async function sendEggGearWebhook(data) {
     const embed = buildEggGearEmbed(data);
@@ -202,7 +233,7 @@ async function checkStock() {
             return;
         }
 
-        // Seed stock check
+        // Check seed
         const seedMessage = buildMessage(data);
         if (seedMessage !== prevState) {
             prevState = seedMessage;
@@ -212,22 +243,31 @@ async function checkStock() {
             console.log(`[${new Date().toLocaleTimeString()}] Seed: No change.`);
         }
 
-        // Egg & Gear stock check
-        const eggGearMessage = [...data.eggs, ...data.gear]
-            .map(item => `${item.name}|${item.quantity}|${item.price}`).join(";");
-
-        if (eggGearMessage !== prevEggGearState) {
-            prevEggGearState = eggGearMessage;
-            await sendEggGearWebhook(data);
-            console.log(`[${new Date().toLocaleTimeString()}] Egg/Gear webhook sent.`);
+        // Check gear
+        const gearMessage = data.gear.map(item => `${item.name}|${item.quantity}|${item.price}`).join(";");
+        if (gearMessage !== prevGearState) {
+            prevGearState = gearMessage;
+            await sendGearWebhook(data);
+            console.log(`[${new Date().toLocaleTimeString()}] Gear webhook sent.`);
         } else {
-            console.log(`[${new Date().toLocaleTimeString()}] Egg/Gear: No change.`);
+            console.log(`[${new Date().toLocaleTimeString()}] Gear: No change.`);
+        }
+
+        // Check egg
+        const eggMessage = data.eggs.map(item => `${item.name}|${item.quantity}|${item.price}`).join(";");
+        if (eggMessage !== prevEggState) {
+            prevEggState = eggMessage;
+            await sendEggWebhook(data);
+            console.log(`[${new Date().toLocaleTimeString()}] Egg webhook sent.`);
+        } else {
+            console.log(`[${new Date().toLocaleTimeString()}] Egg: No change.`);
         }
 
     } catch (err) {
         console.error("Error checking stock:", err.message);
     }
 }
+
 
 
 setInterval(checkStock, 1000);
