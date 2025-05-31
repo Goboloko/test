@@ -104,7 +104,7 @@ function buildEmbed(data) {
     const seeds = data.seeds.map(item => {
         const info = seedInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiMap[item.name] || "🌱";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice Each: $${info.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice Each: $${info.price.toLocaleString()}`;
     }).join("\n\n");
 
     const now = Math.floor(Date.now() / 1000);
@@ -132,7 +132,7 @@ function buildEmbed(data) {
 function buildMessage(data) {
     const seedsText = data.seeds.map(item => {
         const info = seedInfo[item.name] || { rarity: "Unknown", price: 0 };
-        return `° ${item.name} (${info.rarity})\nQuantity: ${item.quantity}\nPrice Each: $${info.price}`;
+        return `° ${item.name} (${info.rarity})\nQuantity: ${item.quantity}\nPrice Each: $${info.price.toLocaleString()}`;
     }).join("\n\n");
 
     return seedsText;
@@ -151,7 +151,7 @@ function buildEggEmbed(data) {
     const itemText = data.eggs.map(item => {
         const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiGear[item.name] || "❔";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price.toLocaleString()}`;
     }).join("\n\n");
 
     return {
@@ -175,7 +175,7 @@ function buildGearEmbed(data) {
     const itemText = data.gear.map(item => {
         const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiGear[item.name] || "❔";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price.toLocaleString()}`;
     }).join("\n\n");
 
     return {
