@@ -53,7 +53,7 @@ const gearInfo = {
     "Rare Egg": { rarity: "Rare", price: 600000 },
     "Legendary Egg": { rarity: "Legendary", price: 600000 },
     "Mytical Egg": { rarity: "Mytical", price: 8000000 },
-    "Bug Egg": { rarity: "Rare", price: 50000000 },
+    "Bug Egg": { rarity: "Divine", price: 50000000 },
 };
 
 
