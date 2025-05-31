@@ -151,7 +151,7 @@ function buildEggEmbed(data) {
     const itemText = data.eggs.map(item => {
         const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiGear[item.name] || "❔";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price}`;
     }).join("\n\n");
 
     return {
@@ -175,7 +175,7 @@ function buildGearEmbed(data) {
     const itemText = data.gear.map(item => {
         const info = gearInfo[item.name] || { rarity: "Unknown", price: 0 };
         const emoji = emojiGear[item.name] || "❔";
-        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${item.price}`;
+        return `${emoji} ${item.name} (${info.rarity})\nQuantity: **X${item.quantity}**\nPrice: $${info.price}`;
     }).join("\n\n");
 
     return {
